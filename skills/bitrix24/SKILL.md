@@ -1,7 +1,7 @@
 ---
 name: bitrix24
 description: Manage Bitrix24 CRM deals, contacts, leads, tasks, calendar, drive, and messaging via REST API
-version: 1.0.0
+version: 0.1.0
 metadata:
   openclaw:
     requires:
@@ -11,12 +11,14 @@ metadata:
         - curl
     primaryEnv: BITRIX24_WEBHOOK_URL
     emoji: "B24"
-    homepage: https://github.com/openclaw/channel-bitrix24
+    homepage: https://github.com/rsvbitrix/openclaw-bitrix24
     tags:
       - crm
       - tasks
       - productivity
       - bitrix24
+      - bitrix
+      - b24
 ---
 
 # Bitrix24
