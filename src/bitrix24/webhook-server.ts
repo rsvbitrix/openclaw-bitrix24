@@ -23,7 +23,7 @@ export function createWebhookRouter(handlers: WebhookHandlers): Router {
   // ONIMBOTMESSAGEADD
   router.post('/webhook/bitrix24/:accountId/message', (req: Request, res: Response) => {
     try {
-      const { accountId } = req.params;
+      const accountId = req.params.accountId as string;
       const body = req.body as Bitrix24MessageEvent;
 
       // Verify application token
@@ -48,7 +48,7 @@ export function createWebhookRouter(handlers: WebhookHandlers): Router {
   // ONIMJOINCHAT (welcome)
   router.post('/webhook/bitrix24/:accountId/welcome', (req: Request, res: Response) => {
     try {
-      const { accountId } = req.params;
+      const accountId = req.params.accountId as string;
       const body = req.body as Bitrix24WelcomeEvent;
 
       const event = parseWelcomeEvent(body);
@@ -66,7 +66,7 @@ export function createWebhookRouter(handlers: WebhookHandlers): Router {
   // ONIMBOTDELETE
   router.post('/webhook/bitrix24/:accountId/delete', (req: Request, res: Response) => {
     try {
-      const { accountId } = req.params;
+      const accountId = req.params.accountId as string;
       const body = req.body as Bitrix24BotDeleteEvent;
 
       const event = parseBotDeleteEvent(body);

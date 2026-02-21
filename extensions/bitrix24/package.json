@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/channel-bitrix24",
+  "name": "@openclaw/bitrix24",
   "version": "1.0.0",
   "description": "Bitrix24 channel plugin for OpenClaw",
   "type": "module",
