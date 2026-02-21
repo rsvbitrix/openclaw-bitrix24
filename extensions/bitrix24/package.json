@@ -1,18 +1,67 @@
 {
   "name": "@openclaw/bitrix24",
-  "version": "1.0.0",
-  "description": "Bitrix24 channel plugin for OpenClaw",
+  "version": "0.1.0-beta.1",
+  "description": "Bitrix24 channel plugin for OpenClaw — chat with your AI agent through Bitrix24 Messenger",
   "type": "module",
   "openclaw": {
     "extensions": ["./src/index.ts"]
   },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/extensions/bitrix24/src/index.js",
+  "types": "dist/extensions/bitrix24/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/extensions/bitrix24/src/index.js",
+      "types": "./dist/extensions/bitrix24/src/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "prepublishOnly": "npm run build"
   },
-  "keywords": ["openclaw", "openclaw-plugin", "bitrix24", "channel", "chatbot"],
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "openclaw-channel",
+    "bitrix24",
+    "bitrix",
+    "channel",
+    "chatbot",
+    "messenger",
+    "crm",
+    "imbot"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsvbitrix/openclaw-bitrix24.git",
+    "directory": "extensions/bitrix24"
+  },
+  "homepage": "https://github.com/rsvbitrix/openclaw-bitrix24#readme",
+  "bugs": {
+    "url": "https://github.com/rsvbitrix/openclaw-bitrix24/issues"
+  },
+  "author": {
+    "name": "OpenClaw Contributors",
+    "email": "bitrix@me.com"
+  },
   "license": "MIT",
-  "files": ["dist/", "openclaw.plugin.json"]
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "axios": "^1.7.0",
+    "express": "^4.21.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  }
 }

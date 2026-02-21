@@ -9,3 +9,5 @@ dist/
 .env.*
 coverage/
 .DS_Store
+*.tgz
+CLAUDE.md

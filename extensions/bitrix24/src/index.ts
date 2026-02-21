@@ -24,6 +24,16 @@ export default function register(api: any): void {
   const channelConfig = api.config?.channels?.bitrix24 ?? {};
   channel.configure(channelConfig);
 
+  // Wire OAuth token persistence
+  channel.setTokenRefreshCallback((accountId, tokens) => {
+    api.logger.info(`OAuth tokens refreshed for Bitrix24 account "${accountId}"`);
+    api.persistConfig?.(`channels.bitrix24.accounts.${accountId}`, {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+    });
+  });
+
   // Register the channel
   api.registerChannel({
     plugin: {

@@ -21,6 +21,12 @@ export interface Bitrix24ClientConfig {
   auth: BitrixAuth;
   rateLimit?: number; // req/sec, default 2
   timeout?: number;   // ms, default 30000
+  /** Called after OAuth tokens are refreshed. Use to persist new tokens. */
+  onTokenRefresh?: (tokens: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }) => void | Promise<void>;
 }
 
 // ── Bot ──────────────────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 # OpenClaw Bitrix24
 
 <!-- badges -->
-<!-- [![npm](https://img.shields.io/npm/v/@openclaw/channel-bitrix24)](https://www.npmjs.com/package/@openclaw/channel-bitrix24) -->
-<!-- [![CI](https://github.com/openclaw/channel-bitrix24/actions/workflows/ci.yml/badge.svg)](https://github.com/openclaw/channel-bitrix24/actions) -->
+<!-- [![npm](https://img.shields.io/npm/v/@openclaw/bitrix24)](https://www.npmjs.com/package/@openclaw/bitrix24) -->
+<!-- [![CI](https://github.com/rsvbitrix/openclaw-bitrix24/actions/workflows/ci.yml/badge.svg)](https://github.com/rsvbitrix/openclaw-bitrix24/actions) -->
 <!-- [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) -->
 
 Channel plugin and skill that connect your OpenClaw AI agent to Bitrix24. Users chat with the agent through Bitrix24 Messenger, and the agent can manage CRM, tasks, calendar, drive, and messaging on their behalf.
@@ -12,7 +12,7 @@ Channel plugin and skill that connect your OpenClaw AI agent to Bitrix24. Users 
 ### 1. Install the plugin
 
 ```bash
-openclaw plugins install @openclaw/channel-bitrix24
+openclaw plugins install @openclaw/bitrix24
 ```
 
 ### 2. Get a webhook URL
@@ -170,7 +170,7 @@ The skill uses the same `BITRIX24_WEBHOOK_URL` env var. It teaches the agent the
 openclaw-bitrix24/
   extensions/bitrix24/           # OpenClaw channel plugin (npm package)
     openclaw.plugin.json         #   Plugin manifest
-    package.json                 #   @openclaw/channel-bitrix24
+    package.json                 #   @openclaw/bitrix24
     src/
       index.ts                   #   Plugin entry point (register channels, services, commands)
       channel.ts                 #   Bitrix24Channel class (messaging, lifecycle)
@@ -212,7 +212,7 @@ openclaw-bitrix24/
 ### Setup
 
 ```bash
-git clone https://github.com/openclaw/channel-bitrix24.git
+git clone https://github.com/rsvbitrix/openclaw-bitrix24.git
 cd channel-bitrix24
 npm install
 ```

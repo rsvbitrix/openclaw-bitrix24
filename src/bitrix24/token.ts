@@ -15,6 +15,9 @@ export function resolveAuth(opts: {
   accountWebhookUrl?: string;
   accountAccessToken?: string;
   accountRefreshToken?: string;
+  accountClientId?: string;
+  accountClientSecret?: string;
+  accountExpiresAt?: number;
   globalWebhookUrl?: string;
   isDefault: boolean;
 }): BitrixAuth | null {
@@ -30,6 +33,9 @@ export function resolveAuth(opts: {
       type: 'oauth',
       accessToken: opts.accountAccessToken.trim(),
       refreshToken: opts.accountRefreshToken?.trim(),
+      clientId: opts.accountClientId?.trim(),
+      clientSecret: opts.accountClientSecret?.trim(),
+      expiresAt: opts.accountExpiresAt,
     };
   }
 

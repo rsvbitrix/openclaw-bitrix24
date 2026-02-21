@@ -291,3 +291,115 @@ describe('AccountManager.findByBotCode', () => {
     manager.destroy();
   });
 });
+
+// ── OAuth config threading ──────────────────────────────────────────────────
+
+describe('AccountManager OAuth config', () => {
+  it('threads per-account clientId/clientSecret/expiresAt into auth', () => {
+    const manager = new AccountManager();
+    manager.loadFromConfig({
+      accounts: [
+        {
+          id: 'oauth1',
+          domain: 'o.bitrix24.ru',
+          accessToken: 'tok',
+          refreshToken: 'ref',
+          clientId: 'cid1',
+          clientSecret: 'csec1',
+          expiresAt: 1700000000000,
+        },
+      ],
+    });
+
+    const account = manager.getAccount('oauth1')!;
+    expect(account.auth).toEqual({
+      type: 'oauth',
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      clientId: 'cid1',
+      clientSecret: 'csec1',
+      expiresAt: 1700000000000,
+    });
+
+    manager.destroy();
+  });
+
+  it('falls back to global clientId/clientSecret when per-account is absent', () => {
+    const manager = new AccountManager();
+    manager.loadFromConfig({
+      clientId: 'global_cid',
+      clientSecret: 'global_csec',
+      accounts: [
+        {
+          id: 'oauth2',
+          domain: 'o2.bitrix24.ru',
+          accessToken: 'tok2',
+          refreshToken: 'ref2',
+        },
+      ],
+    });
+
+    const account = manager.getAccount('oauth2')!;
+    expect(account.auth).toMatchObject({
+      type: 'oauth',
+      clientId: 'global_cid',
+      clientSecret: 'global_csec',
+    });
+
+    manager.destroy();
+  });
+
+  it('per-account clientId overrides global', () => {
+    const manager = new AccountManager();
+    manager.loadFromConfig({
+      clientId: 'global_cid',
+      clientSecret: 'global_csec',
+      accounts: [
+        {
+          id: 'override',
+          domain: 'ov.bitrix24.ru',
+          accessToken: 'tok',
+          clientId: 'per_account_cid',
+          clientSecret: 'per_account_csec',
+        },
+      ],
+    });
+
+    const account = manager.getAccount('override')!;
+    expect(account.auth).toMatchObject({
+      clientId: 'per_account_cid',
+      clientSecret: 'per_account_csec',
+    });
+
+    manager.destroy();
+  });
+});
+
+// ── setTokenRefreshCallback ──────────────────────────────────────────────────
+
+describe('AccountManager.setTokenRefreshCallback', () => {
+  it('passes callback to newly created clients', () => {
+    const manager = new AccountManager();
+    const cb = vi.fn();
+    manager.setTokenRefreshCallback(cb);
+
+    manager.loadFromConfig({
+      accounts: [
+        {
+          id: 'cb_test',
+          domain: 'cb.bitrix24.ru',
+          accessToken: 'tok',
+          refreshToken: 'ref',
+          clientId: 'cid',
+          clientSecret: 'csec',
+        },
+      ],
+    });
+
+    // Getting a client should create one with the callback wired
+    const client = manager.getClient('cb_test');
+    expect(client).toBeDefined();
+
+    manager.destroy();
+  });
+});

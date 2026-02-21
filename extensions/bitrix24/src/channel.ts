@@ -95,6 +95,19 @@ export class Bitrix24Channel {
     return downloadFile(client, fileId);
   }
 
+  /**
+   * Set callback for persisting refreshed OAuth tokens.
+   */
+  setTokenRefreshCallback(
+    cb: (accountId: string, tokens: {
+      accessToken: string;
+      refreshToken: string;
+      expiresAt: number;
+    }) => void | Promise<void>,
+  ): void {
+    this.accountManager.setTokenRefreshCallback(cb);
+  }
+
   // ── Lifecycle ────────────────────────────────────────────────────────────
 
   /**

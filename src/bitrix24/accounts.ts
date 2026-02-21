@@ -8,6 +8,11 @@ import { resolveAuth, extractDomain } from './token.js';
 export class AccountManager {
   private accounts = new Map<string, AccountConfig>();
   private clients = new Map<string, Bitrix24Client>();
+  private tokenRefreshCallback?: (accountId: string, tokens: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }) => void | Promise<void>;
 
   /**
    * Load accounts from OpenClaw channel config.
@@ -24,6 +29,9 @@ export class AccountManager {
         accountWebhookUrl: raw.webhookUrl,
         accountAccessToken: raw.accessToken,
         accountRefreshToken: raw.refreshToken,
+        accountClientId: raw.clientId ?? config.clientId,
+        accountClientSecret: raw.clientSecret ?? config.clientSecret,
+        accountExpiresAt: raw.expiresAt,
         globalWebhookUrl,
         isDefault,
       });
@@ -99,6 +107,17 @@ export class AccountManager {
   }
 
   /**
+   * Set callback for persisting refreshed OAuth tokens.
+   */
+  setTokenRefreshCallback(cb: (accountId: string, tokens: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }) => void | Promise<void>): void {
+    this.tokenRefreshCallback = cb;
+  }
+
+  /**
    * Get or create a Bitrix24Client for an account.
    */
   getClient(accountId: string): Bitrix24Client {
@@ -111,6 +130,9 @@ export class AccountManager {
     client = new Bitrix24Client({
       domain: account.domain,
       auth: account.auth,
+      onTokenRefresh: this.tokenRefreshCallback
+        ? (tokens) => this.tokenRefreshCallback!(accountId, tokens)
+        : undefined,
     });
     this.clients.set(accountId, client);
     return client;
@@ -164,12 +186,17 @@ export class AccountManager {
 
 export interface RawChannelConfig {
   webhookUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
   accounts?: Array<{
     id?: string;
     domain?: string;
     webhookUrl?: string;
     accessToken?: string;
     refreshToken?: string;
+    expiresAt?: number;
+    clientId?: string;
+    clientSecret?: string;
     enabled?: boolean;
     textChunkLimit?: number;
     bot?: Partial<BotConfig>;

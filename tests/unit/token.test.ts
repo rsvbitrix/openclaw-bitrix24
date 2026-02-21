@@ -25,10 +25,46 @@ describe('resolveAuth', () => {
       accountRefreshToken: 'refresh456',
       isDefault: false,
     });
-    expect(auth).toEqual({
+    expect(auth).toMatchObject({
       type: 'oauth',
       accessToken: 'token123',
       refreshToken: 'refresh456',
+    });
+  });
+
+  it('threads clientId, clientSecret, expiresAt into OAuthAuth', () => {
+    const auth = resolveAuth({
+      accountId: 'portal1',
+      accountAccessToken: 'tok',
+      accountRefreshToken: 'ref',
+      accountClientId: 'cid',
+      accountClientSecret: 'csecret',
+      accountExpiresAt: 1700000000000,
+      isDefault: false,
+    });
+    expect(auth).toEqual({
+      type: 'oauth',
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      clientId: 'cid',
+      clientSecret: 'csecret',
+      expiresAt: 1700000000000,
+    });
+  });
+
+  it('omits undefined OAuth fields when not provided', () => {
+    const auth = resolveAuth({
+      accountId: 'portal1',
+      accountAccessToken: 'tok',
+      isDefault: false,
+    });
+    expect(auth).toEqual({
+      type: 'oauth',
+      accessToken: 'tok',
+      refreshToken: undefined,
+      clientId: undefined,
+      clientSecret: undefined,
+      expiresAt: undefined,
     });
   });
 

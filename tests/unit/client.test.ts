@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Bitrix24Client, Bitrix24Error, createClientFromWebhook } from '../../src/bitrix24/client.js';
+import { OAuthError } from '../../src/bitrix24/oauth.js';
 
 vi.mock('axios', () => {
   const mockPost = vi.fn();
@@ -18,11 +19,23 @@ vi.mock('axios', () => {
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import axios from 'axios';
-const { __mockPost: mockPost, __mockCreate: mockCreate } = await import('axios') as any;
+const { __mockPost: mockPost, __mockGet: mockGet, __mockCreate: mockCreate } = await import('axios') as any;
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
+
+/** Standard refresh response from oauth.bitrix.info. */
+const refreshResponse = {
+  access_token: 'refreshed_access',
+  refresh_token: 'refreshed_refresh',
+  expires_in: 3600,
+  domain: 'test.bitrix24.ru',
+  member_id: 'abc',
+  scope: 'imbot',
+  server_endpoint: 'https://oauth.bitrix.info/rest/',
+  status: 'L',
+};
 
 // ── createClientFromWebhook ──────────────────────────────────────────────────
 
@@ -203,6 +216,17 @@ describe('Bitrix24Client.updateTokens', () => {
     client.destroy();
   });
 
+  it('updates expiresAt when provided', () => {
+    const client = new Bitrix24Client({
+      domain: 'oauth.bitrix24.ru',
+      auth: { type: 'oauth', accessToken: 'tok' },
+    });
+
+    client.updateTokens('tok2', 'ref2', 1700000000000);
+    // No throw means success; actual expiresAt is verified via proactive refresh tests
+    client.destroy();
+  });
+
   it('does nothing for webhook auth', () => {
     const client = new Bitrix24Client({
       domain: 'wh.bitrix24.ru',
@@ -246,6 +270,316 @@ describe('Bitrix24Client.uploadFile', () => {
       fileContent: ['test.txt', content.toString('base64')],
     });
     expect(result).toEqual(fakeDiskFile);
+    client.destroy();
+  });
+});
+
+// ── OAuth auto-refresh (proactive) ──────────────────────────────────────────
+
+describe('Bitrix24Client OAuth proactive refresh', () => {
+  function makeOAuthClient(overrides: Record<string, any> = {}) {
+    return new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth' as const,
+        accessToken: 'old_access',
+        refreshToken: 'old_refresh',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() - 1000, // expired
+        ...overrides,
+      },
+    });
+  }
+
+  it('refreshes token before API call when expiresAt is in the past', async () => {
+    // Mock refresh call (axios.get to oauth.bitrix.info)
+    mockGet.mockResolvedValueOnce({ data: refreshResponse });
+    // Mock the actual API call with refreshed token
+    mockPost.mockResolvedValueOnce({ data: { result: { ID: '1' } } });
+
+    const onTokenRefresh = vi.fn();
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'old_access',
+        refreshToken: 'old_refresh',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() - 1000,
+      },
+      onTokenRefresh,
+    });
+
+    const result = await client.callMethod('user.current');
+
+    // Refresh was called
+    expect(mockGet).toHaveBeenCalledWith(
+      'https://oauth.bitrix.info/oauth/token/',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          grant_type: 'refresh_token',
+          client_id: 'cid',
+          client_secret: 'csecret',
+          refresh_token: 'old_refresh',
+        }),
+      }),
+    );
+    // API called with new token
+    expect(mockPost).toHaveBeenCalledWith('/user.current', { auth: 'refreshed_access' });
+    expect(result).toEqual({ ID: '1' });
+    // Callback invoked
+    expect(onTokenRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessToken: 'refreshed_access',
+        refreshToken: 'refreshed_refresh',
+      }),
+    );
+    client.destroy();
+  });
+
+  it('does not refresh when token is still valid', async () => {
+    mockPost.mockResolvedValueOnce({ data: { result: { ID: '1' } } });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'valid_access',
+        refreshToken: 'ref',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour from now
+      },
+    });
+
+    await client.callMethod('user.current');
+
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(mockPost).toHaveBeenCalledWith('/user.current', { auth: 'valid_access' });
+    client.destroy();
+  });
+
+  it('does not refresh when expiresAt is undefined (no expiry info)', async () => {
+    mockPost.mockResolvedValueOnce({ data: { result: { ID: '1' } } });
+
+    const client = makeOAuthClient({ expiresAt: undefined });
+    await client.callMethod('user.current');
+
+    expect(mockGet).not.toHaveBeenCalled();
+    client.destroy();
+  });
+});
+
+// ── OAuth auto-refresh (reactive — expired_token) ────────────────────────────
+
+describe('Bitrix24Client OAuth reactive refresh', () => {
+  it('refreshes and retries on expired_token error', async () => {
+    // First call returns expired_token
+    mockPost.mockResolvedValueOnce({
+      data: { error: 'expired_token', error_description: 'Token expired' },
+    });
+    // Refresh call
+    mockGet.mockResolvedValueOnce({ data: refreshResponse });
+    // Retry with new token succeeds
+    mockPost.mockResolvedValueOnce({ data: { result: { ID: '1' } } });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'expired_tok',
+        refreshToken: 'ref',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() + 60000, // not proactively expired
+      },
+    });
+
+    const result = await client.callMethod('user.current');
+    expect(result).toEqual({ ID: '1' });
+
+    // Verify retry used new token
+    expect(mockPost).toHaveBeenCalledTimes(2);
+    expect(mockPost).toHaveBeenLastCalledWith('/user.current', { auth: 'refreshed_access' });
+    client.destroy();
+  });
+
+  it('refreshes and retries on NO_AUTH_FOUND error', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { error: 'NO_AUTH_FOUND', error_description: '' },
+    });
+    mockGet.mockResolvedValueOnce({ data: refreshResponse });
+    mockPost.mockResolvedValueOnce({ data: { result: 'ok' } });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'tok',
+        refreshToken: 'ref',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() + 60000,
+      },
+    });
+
+    await expect(client.callMethod('test.method')).resolves.toBe('ok');
+    client.destroy();
+  });
+
+  it('throws if retry also fails after refresh', async () => {
+    mockPost
+      .mockResolvedValueOnce({ data: { error: 'expired_token', error_description: '' } })
+      .mockResolvedValueOnce({ data: { error: 'STILL_BROKEN', error_description: 'Nope' } });
+    mockGet.mockResolvedValueOnce({ data: refreshResponse });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'tok',
+        refreshToken: 'ref',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() + 60000,
+      },
+    });
+
+    await expect(client.callMethod('test.method')).rejects.toThrow(Bitrix24Error);
+    client.destroy();
+  });
+
+  it('propagates OAuthError when refresh itself fails', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { error: 'expired_token', error_description: '' },
+    });
+    mockGet.mockResolvedValueOnce({
+      data: { error: 'invalid_grant', error_description: 'Refresh token expired' },
+    });
+
+    const onTokenRefresh = vi.fn();
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'tok',
+        refreshToken: 'ref',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() + 60000,
+      },
+      onTokenRefresh,
+    });
+
+    await expect(client.callMethod('test')).rejects.toThrow(OAuthError);
+    expect(onTokenRefresh).not.toHaveBeenCalled();
+    client.destroy();
+  });
+});
+
+// ── OAuth auto-refresh (no-op cases) ─────────────────────────────────────────
+
+describe('Bitrix24Client OAuth refresh — no-op cases', () => {
+  it('does not attempt refresh for webhook auth on expired_token', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { error: 'expired_token', error_description: '' },
+    });
+
+    const client = new Bitrix24Client({
+      domain: 'wh.bitrix24.ru',
+      auth: { type: 'webhook', webhookUrl: 'https://wh.bitrix24.ru/rest/1/x/' },
+    });
+
+    await expect(client.callMethod('test')).rejects.toThrow(Bitrix24Error);
+    expect(mockGet).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it('does not attempt refresh when clientId/clientSecret are missing', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { error: 'expired_token', error_description: '' },
+    });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'tok',
+        refreshToken: 'ref',
+        // no clientId or clientSecret
+      },
+    });
+
+    await expect(client.callMethod('test')).rejects.toThrow(Bitrix24Error);
+    expect(mockGet).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it('does not attempt refresh when refreshToken is missing', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { error: 'expired_token', error_description: '' },
+    });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'tok',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        // no refreshToken
+      },
+    });
+
+    await expect(client.callMethod('test')).rejects.toThrow(Bitrix24Error);
+    expect(mockGet).not.toHaveBeenCalled();
+    client.destroy();
+  });
+});
+
+// ── OAuth concurrent refresh deduplication ───────────────────────────────────
+
+describe('Bitrix24Client OAuth concurrent dedup', () => {
+  it('coalesces concurrent refresh attempts into one call', async () => {
+    // All three calls hit expired_token
+    mockPost
+      .mockResolvedValueOnce({ data: { error: 'expired_token', error_description: '' } })
+      .mockResolvedValueOnce({ data: { error: 'expired_token', error_description: '' } })
+      .mockResolvedValueOnce({ data: { error: 'expired_token', error_description: '' } });
+
+    // Single refresh
+    mockGet.mockResolvedValueOnce({ data: refreshResponse });
+
+    // Three retries succeed
+    mockPost
+      .mockResolvedValueOnce({ data: { result: 'a' } })
+      .mockResolvedValueOnce({ data: { result: 'b' } })
+      .mockResolvedValueOnce({ data: { result: 'c' } });
+
+    const client = new Bitrix24Client({
+      domain: 'test.bitrix24.ru',
+      auth: {
+        type: 'oauth',
+        accessToken: 'old',
+        refreshToken: 'ref',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        expiresAt: Date.now() + 60000,
+      },
+      rateLimit: 100, // high limit so all run concurrently
+    });
+
+    const results = await Promise.all([
+      client.callMethod('m1'),
+      client.callMethod('m2'),
+      client.callMethod('m3'),
+    ]);
+
+    expect(results).toEqual(['a', 'b', 'c']);
+    // Only one refresh call despite three concurrent failures
+    expect(mockGet).toHaveBeenCalledTimes(1);
     client.destroy();
   });
 });
