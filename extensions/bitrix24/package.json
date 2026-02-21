@@ -1,0 +1,18 @@
+{
+  "name": "@openclaw/channel-bitrix24",
+  "version": "1.0.0",
+  "description": "Bitrix24 channel plugin for OpenClaw",
+  "type": "module",
+  "openclaw": {
+    "extensions": ["./src/index.ts"]
+  },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": ["openclaw", "openclaw-plugin", "bitrix24", "channel", "chatbot"],
+  "license": "MIT",
+  "files": ["dist/", "openclaw.plugin.json"]
+}

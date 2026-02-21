@@ -1,0 +1,25 @@
+{
+  "name": "openclaw-bitrix24",
+  "version": "1.0.0",
+  "description": "OpenClaw channel plugin and skill for Bitrix24",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ extensions/"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/express": "^5.0.0",
+    "vitest": "^2.0.0",
+    "eslint": "^9.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "express": "^4.21.0"
+  },
+  "license": "MIT"
+}

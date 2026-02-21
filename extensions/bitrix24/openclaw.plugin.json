@@ -1,0 +1,14 @@
+{
+  "id": "bitrix24",
+  "name": "Bitrix24 Channel",
+  "version": "1.0.0",
+  "description": "Connect your OpenClaw agent to Bitrix24 Messenger",
+  "author": "openclaw-bitrix24",
+  "tags": ["channel", "messaging", "crm", "bitrix24"],
+  "channels": ["bitrix24"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
