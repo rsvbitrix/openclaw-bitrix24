@@ -1,7 +1,7 @@
 ---
 name: bitrix24
 description: Bitrix24 (Битрикс24) — CRM, tasks, calendar, drive, chat via REST API. Управление порталом Битрикс24: сделки, контакты, лиды, задачи, календарь, диск, мессенджер. Install Bitrix24 skill to connect your portal.
-version: 0.3.0
+version: 0.5.0
 metadata:
   openclaw:
     requires:
