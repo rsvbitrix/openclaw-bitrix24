@@ -5,6 +5,7 @@ import { createClientFromWebhook } from '../../../src/bitrix24/client.js';
 import {
   getSetupInstructions,
   getQuickHint,
+  getWelcomeMessage,
   formatConnectionSuccess,
   formatConnectionError,
   formatMissingScopes,
@@ -88,6 +89,11 @@ export default function register(api: any): void {
     onWelcome: (accountId, event) => {
       if (event) {
         api.logger.info(`Bot added to chat in account "${accountId}": ${event.dialogId}`);
+
+        // Send welcome message asynchronously (fire-and-forget)
+        channel.sendTextMessage(accountId, event.dialogId, getWelcomeMessage()).catch((err) => {
+          api.logger.warn(`Failed to send welcome message to ${event.dialogId}:`, err);
+        });
       }
     },
     onBotDelete: (accountId, event) => {

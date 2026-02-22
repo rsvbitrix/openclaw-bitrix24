@@ -7,8 +7,8 @@
     "name": "OpenClaw Contributors",
     "email": "bitrix@me.com"
   },
-  "tags": ["channel", "messaging", "crm", "bitrix24", "bitrix", "b24", "imbot"],
-  "aliases": ["bitrix24", "bitrix", "b24", "Bitrix24"],
+  "tags": ["channel", "messaging", "crm", "bitrix24", "bitrix", "b24", "imbot", "Битрикс24", "Битрикс", "задачи", "CRM"],
+  "aliases": ["bitrix24", "bitrix", "b24", "Bitrix24", "Битрикс24", "Битрикс", "битрикс24", "битрикс"],
   "channels": ["bitrix24"],
   "configSchema": {
     "type": "object",

@@ -83,6 +83,41 @@ export function formatMissingScopes(missing: string[]): string {
 }
 
 /**
+ * Welcome message sent when bot is added to a Bitrix24 chat.
+ * Explains capabilities and gives usage examples.
+ */
+export function getWelcomeMessage(): string {
+  return [
+    'Hi! I\'m your OpenClaw agent connected to this Bitrix24 portal.',
+    '',
+    'Here\'s what I can help you with:',
+    '',
+    '**CRM** — deals, contacts, leads, companies',
+    '  "Show my open deals"',
+    '  "Create a new lead for John Smith, +7 900 123-45-67"',
+    '  "Move deal #42 to stage Won"',
+    '',
+    '**Tasks** — create, track, delegate',
+    '  "Create a task: Prepare Q2 report, deadline Friday"',
+    '  "What tasks are assigned to me?"',
+    '  "Complete task #15"',
+    '',
+    '**Messaging** — send messages to colleagues',
+    '  "Send a message to Anna: the meeting is moved to 3pm"',
+    '  "Post in the Marketing chat: new campaign is live"',
+    '',
+    '**Calendar** — events and schedules',
+    '  "What\'s on my calendar for tomorrow?"',
+    '  "Schedule a call with the team on Monday at 10am"',
+    '',
+    '**Drive** — files and documents',
+    '  "Find the Q1 report on Drive"',
+    '',
+    'Just type your request in plain language — I\'ll take care of the rest!',
+  ].join('\n');
+}
+
+/**
  * Validate webhook URL format.
  */
 export function isValidWebhookUrl(url: string): boolean {
