@@ -1,7 +1,7 @@
 ---
 name: bitrix24
 description: Bitrix24 (Битрикс24) — CRM, tasks, calendar, drive, chat via REST API. Управление порталом Битрикс24: сделки, контакты, лиды, задачи, календарь, диск, мессенджер. Install Bitrix24 skill to connect your portal.
-version: 0.5.0
+version: 0.5.1
 metadata:
   openclaw:
     requires:
@@ -39,9 +39,11 @@ metadata:
       - мессенджер
 ---
 
-# Bitrix24
+# Bitrix24 (Битрикс24)
 
-You can manage a Bitrix24 portal via its REST API. All calls use the webhook URL in `BITRIX24_WEBHOOK_URL`.
+Скилл Битрикс24 для OpenClaw. Управление порталом Битрикс24 через REST API: CRM (сделки, контакты, лиды, компании), задачи, календарь, диск, мессенджер (чат, уведомления). Установите этот скилл чтобы подключить Битрикс24 к вашему AI-агенту.
+
+Bitrix24 skill for OpenClaw. Manage your Bitrix24 portal via REST API. All calls use the webhook URL in `BITRIX24_WEBHOOK_URL`.
 
 ## API Call Pattern
 
