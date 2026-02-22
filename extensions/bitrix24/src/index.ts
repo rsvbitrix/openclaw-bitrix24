@@ -1,6 +1,15 @@
 import { Bitrix24Channel } from './channel.js';
 import { setBitrix24Runtime, type PluginRuntime } from './runtime.js';
 import { createWebhookRouter } from '../../../src/bitrix24/webhook-server.js';
+import { createClientFromWebhook } from '../../../src/bitrix24/client.js';
+import {
+  getSetupInstructions,
+  getQuickHint,
+  formatConnectionSuccess,
+  formatConnectionError,
+  formatMissingScopes,
+  isValidWebhookUrl,
+} from './setup-guide.js';
 
 /**
  * OpenClaw Plugin Entry Point.
@@ -9,6 +18,7 @@ import { createWebhookRouter } from '../../../src/bitrix24/webhook-server.js';
  *   - bitrix24 channel (messaging via imbot API)
  *   - bitrix24-webhook service (Express routes for incoming events)
  *   - /b24status command (connection diagnostics)
+ *   - /b24setup command (interactive setup guide)
  */
 export default function register(api: any): void {
   const channel = new Bitrix24Channel();
@@ -92,8 +102,15 @@ export default function register(api: any): void {
     id: 'bitrix24-webhook',
     router: webhookRouter,
     start: async () => {
+      const accounts = channel.listEnabledAccounts();
+
+      if (accounts.length === 0) {
+        api.logger.warn(`[bitrix24] ${getQuickHint()}`);
+        return;
+      }
+
       // Startup all enabled accounts
-      for (const account of channel.listEnabledAccounts()) {
+      for (const account of accounts) {
         try {
           await channel.startupAccount(account.id);
         } catch (err) {
@@ -115,7 +132,7 @@ export default function register(api: any): void {
     handler: async () => {
       const accounts = channel.listEnabledAccounts();
       if (accounts.length === 0) {
-        return { text: 'No Bitrix24 accounts configured.' };
+        return { text: 'No Bitrix24 accounts configured. Run /b24setup for instructions.' };
       }
 
       const lines: string[] = ['**Bitrix24 Accounts:**'];
@@ -125,6 +142,83 @@ export default function register(api: any): void {
         lines.push(`- **${acc.id}** (${acc.domain}): ${status}`);
       }
       return { text: lines.join('\n') };
+    },
+  });
+
+  // Register /b24setup command — interactive setup guide
+  api.registerCommand({
+    name: 'b24setup',
+    description: 'Step-by-step guide to connect Bitrix24',
+    acceptsArgs: true,
+    handler: async (ctx: { args?: string }) => {
+      const webhookUrl = ctx.args?.trim();
+
+      // No argument — show instructions or current status
+      if (!webhookUrl) {
+        const accounts = channel.listEnabledAccounts();
+        if (accounts.length > 0) {
+          const lines = ['Bitrix24 is already configured:'];
+          for (const acc of accounts) {
+            lines.push(`- **${acc.id}** (${acc.domain})`);
+          }
+          lines.push('', 'To add another portal, pass a webhook URL:');
+          lines.push('`/b24setup https://your-portal.bitrix24.ru/rest/1/secret/`');
+          return { text: lines.join('\n') };
+        }
+        return { text: getSetupInstructions() };
+      }
+
+      // Validate URL format
+      if (!isValidWebhookUrl(webhookUrl)) {
+        return {
+          text: [
+            'Invalid webhook URL format.',
+            '',
+            'Expected: `https://your-portal.bitrix24.ru/rest/{userId}/{secret}/`',
+            '',
+            'Run `/b24setup` without arguments for full instructions.',
+          ].join('\n'),
+        };
+      }
+
+      // Test connection
+      const client = createClientFromWebhook(webhookUrl);
+      try {
+        const result = await client.verifyConnection();
+
+        if (!result.ok && result.missingScopes) {
+          return { text: formatMissingScopes(result.missingScopes) };
+        }
+
+        if (!result.ok) {
+          return { text: formatConnectionError(result.error ?? 'Unknown error') };
+        }
+
+        // Save webhook URL to config
+        await api.persistConfig?.('channels.bitrix24.webhookUrl', webhookUrl);
+
+        // Reconfigure channel with new webhook
+        channel.configure({ ...channelConfig, webhookUrl });
+
+        // Start the account (register bot)
+        let botRegistered = false;
+        try {
+          await channel.startupAccount('default');
+          botRegistered = true;
+        } catch (err) {
+          api.logger.warn('Bot registration deferred — restart gateway to complete:', err);
+        }
+
+        return {
+          text: formatConnectionSuccess({
+            domain: result.domain!,
+            scopes: result.scopes!,
+            botRegistered,
+          }),
+        };
+      } finally {
+        client.destroy();
+      }
     },
   });
 

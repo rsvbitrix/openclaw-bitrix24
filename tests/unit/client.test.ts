@@ -539,6 +539,66 @@ describe('Bitrix24Client OAuth refresh — no-op cases', () => {
   });
 });
 
+// ── verifyConnection ─────────────────────────────────────────────────────────
+
+describe('Bitrix24Client verifyConnection', () => {
+  it('returns ok when all required scopes are present', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { result: { scope: ['imbot', 'im', 'disk', 'crm'] } },
+    });
+
+    const client = createClientFromWebhook('https://test.bitrix24.ru/rest/1/abc/');
+    const result = await client.verifyConnection();
+
+    expect(result.ok).toBe(true);
+    expect(result.domain).toBe('test.bitrix24.ru');
+    expect(result.scopes).toEqual(['imbot', 'im', 'disk', 'crm']);
+    expect(result.missingScopes).toBeUndefined();
+    expect(result.error).toBeUndefined();
+    client.destroy();
+  });
+
+  it('reports missing scopes', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { result: { scope: ['im'] } },
+    });
+
+    const client = createClientFromWebhook('https://test.bitrix24.ru/rest/1/abc/');
+    const result = await client.verifyConnection();
+
+    expect(result.ok).toBe(false);
+    expect(result.missingScopes).toEqual(['imbot', 'disk']);
+    expect(result.error).toContain('imbot');
+    expect(result.error).toContain('disk');
+    client.destroy();
+  });
+
+  it('handles API errors gracefully', async () => {
+    mockPost.mockRejectedValueOnce(new Error('Network timeout'));
+
+    const client = createClientFromWebhook('https://test.bitrix24.ru/rest/1/abc/');
+    const result = await client.verifyConnection();
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('Network timeout');
+    client.destroy();
+  });
+
+  it('handles non-array scope response', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { result: { license: 'demo' } },
+    });
+
+    const client = createClientFromWebhook('https://test.bitrix24.ru/rest/1/abc/');
+    const result = await client.verifyConnection();
+
+    expect(result.ok).toBe(false);
+    expect(result.scopes).toEqual([]);
+    expect(result.missingScopes).toEqual(['imbot', 'im', 'disk']);
+    client.destroy();
+  });
+});
+
 // ── OAuth concurrent refresh deduplication ───────────────────────────────────
 
 describe('Bitrix24Client OAuth concurrent dedup', () => {

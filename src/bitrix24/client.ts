@@ -292,6 +292,39 @@ export class Bitrix24Client {
     }
   }
 
+  /**
+   * Verify connection and check required scopes.
+   * Uses app.info (doesn't require 'user' scope).
+   */
+  async verifyConnection(): Promise<{
+    ok: boolean;
+    domain?: string;
+    scopes?: string[];
+    missingScopes?: string[];
+    error?: string;
+  }> {
+    const REQUIRED_SCOPES = ['imbot', 'im', 'disk'];
+
+    try {
+      const info = await this.callMethod<{ scope?: string[]; license?: string }>('app.info');
+      const scopes = Array.isArray(info.scope) ? info.scope : [];
+      const missing = REQUIRED_SCOPES.filter((s) => !scopes.includes(s));
+
+      return {
+        ok: missing.length === 0,
+        domain: this.config.domain,
+        scopes,
+        missingScopes: missing.length > 0 ? missing : undefined,
+        error: missing.length > 0
+          ? `Missing required scopes: ${missing.join(', ')}`
+          : undefined,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { ok: false, error: message };
+    }
+  }
+
   get domain(): string {
     return this.config.domain;
   }
