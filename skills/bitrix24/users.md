@@ -52,3 +52,10 @@ curl -s "${BITRIX24_WEBHOOK_URL}department.delete.json" -d 'ID=5' | jq .result
 **User fields:** ID, NAME, LAST_NAME, SECOND_NAME, EMAIL, PERSONAL_PHONE, WORK_PHONE, PERSONAL_PHOTO, WORK_POSITION, UF_DEPARTMENT (array of department IDs), ACTIVE, DATE_REGISTER, LAST_LOGIN.
 
 **Department fields:** ID, NAME, SORT, PARENT (parent department ID), HEAD (head user ID), UF_HEAD.
+
+## More Methods (MCP)
+
+This file covers common user methods. For additional methods or updated parameters, use MCP:
+- `bitrix-search "user"` — find all user-related methods
+- `bitrix-search "department"` — find department methods
+- `bitrix-method-details user.get` — get full spec for any method

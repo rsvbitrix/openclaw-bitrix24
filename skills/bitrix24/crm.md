@@ -124,3 +124,10 @@ curl -s "${BITRIX24_WEBHOOK_URL}crm.activity.update.json" \
 
 **OWNER_TYPE_ID:** `1` = Lead, `2` = Deal, `3` = Contact, `4` = Company.
 **TYPE_ID:** `1` = Email, `2` = Meeting, `3` = Call, `6` = Task.
+
+## More Methods (MCP)
+
+This file covers common CRM methods. For additional methods or updated parameters, use MCP:
+- `bitrix-search "crm deal"` — find all deal-related methods
+- `bitrix-search "crm contact"` — find contact methods
+- `bitrix-method-details crm.deal.add` — get full spec for any method

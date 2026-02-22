@@ -60,3 +60,9 @@ curl -s "${BITRIX24_WEBHOOK_URL}calendar.accessibility.get.json" \
 **Key fields:** name, description, from, to, section, attendees[], color, importance (high/normal), location, rrule, remind[].
 
 **Importance:** `high`, `normal`.
+
+## More Methods (MCP)
+
+This file covers common calendar methods. For additional methods or updated parameters, use MCP:
+- `bitrix-search "calendar event"` — find all calendar methods
+- `bitrix-method-details calendar.event.add` — get full spec for any method

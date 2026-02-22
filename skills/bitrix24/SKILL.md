@@ -1,7 +1,7 @@
 ---
 name: bitrix24
 description: Manage Bitrix24 CRM deals, contacts, leads, tasks, calendar, drive, and messaging via REST API
-version: 0.1.0
+version: 0.2.0
 metadata:
   openclaw:
     requires:
@@ -9,6 +9,13 @@ metadata:
         - BITRIX24_WEBHOOK_URL
       bins:
         - curl
+      mcp:
+        - url: https://mcp-dev.bitrix24.tech/mcp
+          tools:
+            - bitrix-search
+            - bitrix-method-details
+            - bitrix-article-details
+            - bitrix-event-details
     primaryEnv: BITRIX24_WEBHOOK_URL
     emoji: "B24"
     homepage: https://github.com/rsvbitrix/openclaw-bitrix24
@@ -32,6 +39,19 @@ curl -s "${BITRIX24_WEBHOOK_URL}<method>.json" -d '<params>' | jq .result
 ```
 
 Rate limit: **2 req/s**. Batch up to 50 calls with `batch`.
+
+## API Documentation (MCP)
+
+Full Bitrix24 REST API documentation is available via MCP server at `https://mcp-dev.bitrix24.tech/mcp`.
+
+Use MCP tools to find new methods or check for updates:
+
+1. **`bitrix-search`** — find methods by natural language query (e.g., "create deal", "task checklist")
+2. **`bitrix-method-details`** — get full method spec: parameters, returns, errors, examples. Pass exact method name (e.g., `crm.deal.add`)
+3. **`bitrix-article-details`** — get overview articles by title
+4. **`bitrix-event-details`** — get webhook event documentation
+
+The module files below cover the most common methods. Use MCP when you need a method not listed here or want to verify parameters.
 
 ## Modules
 

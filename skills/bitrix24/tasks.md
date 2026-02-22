@@ -110,3 +110,10 @@ curl -s "${BITRIX24_WEBHOOK_URL}task.planner.getlist.json" | jq .result
 **Priority:** `0` = Low, `1` = Medium (default), `2` = High.
 
 **Key fields:** TITLE, DESCRIPTION, RESPONSIBLE_ID, CREATED_BY, DEADLINE, START_DATE_PLAN, END_DATE_PLAN, PRIORITY, STATUS, GROUP_ID (project), TAGS, TIME_ESTIMATE (seconds), ALLOW_TIME_TRACKING.
+
+## More Methods (MCP)
+
+This file covers common task methods. For additional methods or updated parameters, use MCP:
+- `bitrix-search "task"` — find all task-related methods
+- `bitrix-search "task checklist"` — find checklist methods
+- `bitrix-method-details tasks.task.add` — get full spec for any method

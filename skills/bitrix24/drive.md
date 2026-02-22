@@ -92,3 +92,10 @@ The `DOWNLOAD_URL` from `disk.file.get` requires authentication. Append `&auth=<
 **File fields:** ID, NAME, SIZE, CODE, STORAGE_ID, TYPE (file/folder), PARENT_ID, DOWNLOAD_URL, DETAIL_URL, CREATE_TIME, UPDATE_TIME, CREATED_BY, UPDATED_BY.
 
 **Upload format:** `fileContent` is an array of `[filename, base64_encoded_content]`.
+
+## More Methods (MCP)
+
+This file covers common drive methods. For additional methods or updated parameters, use MCP:
+- `bitrix-search "disk file"` — find all file-related methods
+- `bitrix-search "disk storage"` — find storage methods
+- `bitrix-method-details disk.file.get` — get full spec for any method

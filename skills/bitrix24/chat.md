@@ -95,3 +95,10 @@ Bitrix24 chat uses BB-code:
 **DIALOG_ID format:**
 - `123` — direct message to user ID 123
 - `chat456` — group chat with chat ID 456
+
+## More Methods (MCP)
+
+This file covers common messaging methods. For additional methods or updated parameters, use MCP:
+- `bitrix-search "im message"` — find all messaging methods
+- `bitrix-search "im chat"` — find chat management methods
+- `bitrix-method-details im.message.add` — get full spec for any method
