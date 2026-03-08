@@ -58,13 +58,14 @@ export class Bitrix24Channel {
     media?: MediaAttachment[],
   ): Promise<void> {
     const account = this.accountManager.getAccount(accountId);
-    if (!account || !account.botId) {
-      throw new Error(`Account "${accountId}" not configured or bot not registered`);
+    if (!account || !account.botId || !account.bot.clientId) {
+      throw new Error(`Account "${accountId}" not configured, bot not registered, or bot CLIENT_ID missing`);
     }
 
     const client = this.accountManager.getClient(accountId);
     await sendMessage(client, {
       botId: account.botId,
+      botClientId: account.bot.clientId,
       dialogId,
       text,
       media,
@@ -128,6 +129,9 @@ export class Bitrix24Channel {
 
     // Register bot
     runtime.logger.info(`Registering Bitrix24 bot for "${accountId}" on ${account.domain}...`);
+    if (!account.bot.clientId) {
+      throw new Error(`Account "${accountId}" bot CLIENT_ID is not configured`);
+    }
     const { botId, botCode } = await registerBot(
       client,
       accountId,
@@ -146,10 +150,14 @@ export class Bitrix24Channel {
     const runtime = getBitrix24Runtime();
     const account = this.accountManager.getAccount(accountId);
     if (!account?.botId) return;
+    if (!account.bot.clientId) {
+      runtime.logger.warn(`Cannot unregister Bitrix24 bot for "${accountId}": bot CLIENT_ID is missing`);
+      return;
+    }
 
     try {
       const client = this.accountManager.getClient(accountId);
-      await unregisterBot(client, account.botId);
+      await unregisterBot(client, account.botId, account.bot.clientId);
       runtime.logger.info(`Bitrix24 bot unregistered for "${accountId}"`);
     } catch (err) {
       runtime.logger.warn(`Failed to unregister bot for "${accountId}": ${err}`);

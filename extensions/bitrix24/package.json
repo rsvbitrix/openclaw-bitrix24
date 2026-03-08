@@ -1,6 +1,6 @@
 {
   "name": "@openclaw/bitrix24",
-  "version": "0.1.0-beta.1",
+  "version": "0.2.0-beta.2",
   "description": "Bitrix24 channel plugin for OpenClaw — chat with your AI agent through Bitrix24 Messenger",
   "type": "module",
   "openclaw": {

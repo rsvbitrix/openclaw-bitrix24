@@ -25,7 +25,7 @@ export async function sendMessage(
   const messageIds: string[] = [];
 
   // 1. Typing indicator
-  await sendTyping(client, msg.botId, msg.dialogId).catch(() => {
+  await sendTyping(client, msg.botId, msg.botClientId, msg.dialogId).catch(() => {
     // Non-critical — ignore errors
   });
 
@@ -37,6 +37,7 @@ export async function sendMessage(
   for (const chunk of chunks) {
     const id = await sendTextMessage(client, {
       botId: msg.botId,
+      botClientId: msg.botClientId,
       dialogId: msg.dialogId,
       text: chunk,
       keyboard: chunks.indexOf(chunk) === chunks.length - 1 ? msg.keyboard : undefined,
@@ -68,9 +69,11 @@ export async function sendMessage(
 async function sendTyping(
   client: Bitrix24Client,
   botId: number,
+  botClientId: string,
   dialogId: string,
 ): Promise<void> {
   await client.callMethod('imbot.chat.sendTyping', {
+    CLIENT_ID: botClientId,
     BOT_ID: botId,
     DIALOG_ID: dialogId,
   });
@@ -83,12 +86,14 @@ async function sendTextMessage(
   client: Bitrix24Client,
   params: {
     botId: number;
+    botClientId: string;
     dialogId: string;
     text: string;
     keyboard?: OutgoingMessage['keyboard'];
   },
 ): Promise<string> {
   const payload: Record<string, any> = {
+    CLIENT_ID: params.botClientId,
     BOT_ID: params.botId,
     DIALOG_ID: params.dialogId,
     MESSAGE: params.text,
@@ -108,11 +113,13 @@ async function sendTextMessage(
 export async function updateMessage(
   client: Bitrix24Client,
   botId: number,
+  botClientId: string,
   messageId: string,
   newText: string,
 ): Promise<void> {
   const bbText = markdownToBBCode(newText);
   await client.callMethod('imbot.message.update', {
+    CLIENT_ID: botClientId,
     BOT_ID: botId,
     MESSAGE_ID: messageId,
     MESSAGE: bbText,
@@ -125,9 +132,11 @@ export async function updateMessage(
 export async function deleteMessage(
   client: Bitrix24Client,
   botId: number,
+  botClientId: string,
   messageId: string,
 ): Promise<void> {
   await client.callMethod('imbot.message.delete', {
+    CLIENT_ID: botClientId,
     BOT_ID: botId,
     MESSAGE_ID: messageId,
   });

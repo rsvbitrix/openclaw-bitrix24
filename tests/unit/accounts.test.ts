@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 import { AccountManager, type RawChannelConfig } from '../../src/bitrix24/accounts.js';
 
 vi.mock('axios', () => {
@@ -11,6 +12,10 @@ vi.mock('axios', () => {
 });
 
 const savedEnv = process.env.BITRIX24_WEBHOOK_URL;
+
+function md5(value: string): string {
+  return createHash('md5').update(value.replace(/\/$/, '')).digest('hex');
+}
 
 beforeEach(() => {
   delete process.env.BITRIX24_WEBHOOK_URL;
@@ -60,6 +65,7 @@ describe('AccountManager.loadFromConfig', () => {
     expect(p1!.enabled).toBe(true);
     expect(p1!.textChunkLimit).toBe(4000);
     expect(p1!.bot.name).toBe('OpenClaw Agent');
+    expect(p1!.bot.clientId).toBe(md5('https://portal1.bitrix24.ru/rest/1/secret1/'));
     expect(p1!.dmPolicy).toBe('open');
 
     const p2 = manager.getAccount('portal2');
@@ -68,6 +74,7 @@ describe('AccountManager.loadFromConfig', () => {
     expect(p2!.textChunkLimit).toBe(2000);
     expect(p2!.bot.name).toBe('CustomBot');
     expect(p2!.bot.color).toBe('RED');
+    expect(p2!.bot.clientId).toBe(md5('https://portal2.bitrix24.ru/rest/2/secret2/'));
     expect(p2!.botId).toBe(10);
     expect(p2!.botCode).toBe('custom_bot');
     expect(p2!.dmPolicy).toBe('paired');
@@ -89,6 +96,7 @@ describe('AccountManager.loadFromConfig', () => {
     expect(def!.domain).toBe('env.bitrix24.ru');
     expect(def!.auth).toEqual({ type: 'webhook', webhookUrl: 'https://env.bitrix24.ru/rest/1/envkey/' });
     expect(def!.enabled).toBe(true);
+    expect(def!.bot.clientId).toBe(md5('https://env.bitrix24.ru/rest/1/envkey/'));
 
     manager.destroy();
   });
@@ -105,7 +113,43 @@ describe('AccountManager.loadFromConfig', () => {
     const def = manager.getAccount('default');
     expect(def).toBeDefined();
     expect(def!.domain).toBe('global.bitrix24.ru');
+    expect(def!.bot.clientId).toBe(md5('https://global.bitrix24.ru/rest/3/globalkey/'));
 
+    manager.destroy();
+  });
+
+  it('prefers explicit bot.clientId over the derived webhook hash', () => {
+    const manager = new AccountManager();
+    manager.loadFromConfig({
+      accounts: [
+        {
+          id: 'portal',
+          webhookUrl: 'https://portal.bitrix24.ru/rest/1/secret/',
+          bot: { clientId: 'explicit-bot-client-id' },
+        },
+      ],
+    });
+
+    expect(manager.getAccount('portal')!.bot.clientId).toBe('explicit-bot-client-id');
+    manager.destroy();
+  });
+
+  it('does not auto-derive bot.clientId for oauth accounts', () => {
+    const manager = new AccountManager();
+    manager.loadFromConfig({
+      accounts: [
+        {
+          id: 'oauth',
+          domain: 'oauth.bitrix24.ru',
+          accessToken: 'token',
+          refreshToken: 'refresh',
+          clientId: 'oauth-client-id',
+          clientSecret: 'oauth-client-secret',
+        },
+      ],
+    });
+
+    expect(manager.getAccount('oauth')!.bot.clientId).toBeUndefined();
     manager.destroy();
   });
 

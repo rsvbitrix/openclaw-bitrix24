@@ -1,6 +1,16 @@
+import { createHash } from 'node:crypto';
 import type { AccountConfig, BitrixAuth, BotConfig } from './types.js';
 import { Bitrix24Client, createClientFromWebhook } from './client.js';
 import { resolveAuth, extractDomain } from './token.js';
+
+function deriveBotClientId(auth: BitrixAuth, explicitClientId?: string): string | undefined {
+  const provided = explicitClientId?.trim();
+  if (provided) return provided;
+  if (auth.type !== 'webhook') return undefined;
+
+  // Use a stable secret-derived CLIENT_ID for webhook-backed bot integrations.
+  return createHash('md5').update(auth.webhookUrl.replace(/\/$/, '')).digest('hex');
+}
 
 /**
  * Manage multiple Bitrix24 portal accounts.
@@ -52,6 +62,7 @@ export class AccountManager {
           color: raw.bot?.color ?? 'PURPLE',
           workPosition: raw.bot?.workPosition ?? 'AI Assistant',
           avatar: raw.bot?.avatar,
+          clientId: deriveBotClientId(auth, raw.bot?.clientId),
         },
         botId: raw.botId,
         botCode: raw.botCode,
@@ -75,7 +86,12 @@ export class AccountManager {
           auth,
           enabled: true,
           textChunkLimit: 4000,
-          bot: { name: 'OpenClaw Agent', color: 'PURPLE', workPosition: 'AI Assistant' },
+          bot: {
+            name: 'OpenClaw Agent',
+            color: 'PURPLE',
+            workPosition: 'AI Assistant',
+            clientId: deriveBotClientId(auth),
+          },
           dmPolicy: 'open',
         });
       }

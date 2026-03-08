@@ -1,5 +1,17 @@
 # Messaging & Notifications
 
+## `imbot.*` Security Rule
+
+For bot flows that use `imbot.*`:
+
+- pass `CLIENT_ID` when registering the bot
+- store that exact `CLIENT_ID`
+- pass the same `CLIENT_ID` in every later `imbot.*` call
+
+`CLIENT_ID` is a secret control value. It should not be guessable or public.
+
+In the historical Claw integration, a stable `CLIENT_ID` derived from `md5(webhook)` was used.
+
 ## Send Messages
 
 ```bash

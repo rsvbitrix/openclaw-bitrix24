@@ -1,7 +1,7 @@
 {
   "id": "bitrix24",
   "name": "Bitrix24",
-  "version": "0.2.0-beta.1",
+  "version": "0.2.0-beta.2",
   "description": "Connect your OpenClaw agent to Bitrix24 Messenger",
   "author": {
     "name": "OpenClaw Contributors",
@@ -18,6 +18,14 @@
         "description": "Bitrix24 inbound webhook URL (e.g., https://your-portal.bitrix24.ru/rest/1/abc123/)",
         "pattern": "^https://.+/rest/\\d+/[^/]+/?$"
       },
+      "clientId": {
+        "type": "string",
+        "description": "OAuth app clientId for token refresh on the default account"
+      },
+      "clientSecret": {
+        "type": "string",
+        "description": "OAuth app clientSecret for token refresh on the default account"
+      },
       "accounts": {
         "type": "array",
         "description": "Multiple Bitrix24 portals (advanced setup)",
@@ -29,6 +37,9 @@
             "domain": { "type": "string", "description": "Portal domain (auto-extracted from webhook)" },
             "accessToken": { "type": "string", "description": "OAuth access token" },
             "refreshToken": { "type": "string", "description": "OAuth refresh token" },
+            "clientId": { "type": "string", "description": "OAuth app clientId for token refresh" },
+            "clientSecret": { "type": "string", "description": "OAuth app clientSecret for token refresh" },
+            "expiresAt": { "type": "number", "description": "OAuth token expiry timestamp in unix ms" },
             "enabled": { "type": "boolean", "default": true },
             "textChunkLimit": { "type": "number", "default": 4000 },
             "dmPolicy": { "type": "string", "enum": ["open", "paired"], "default": "open" },
@@ -38,7 +49,11 @@
                 "name": { "type": "string", "default": "OpenClaw Agent" },
                 "lastName": { "type": "string" },
                 "color": { "type": "string", "default": "PURPLE" },
-                "workPosition": { "type": "string", "default": "AI Assistant" }
+                "workPosition": { "type": "string", "default": "AI Assistant" },
+                "clientId": {
+                  "type": "string",
+                  "description": "Secret CLIENT_ID reused in every imbot.* call. Auto-derived from webhook for webhook accounts."
+                }
               }
             }
           }

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 
 // Mock axios before any imports that use it
 const mockPost = vi.fn();
@@ -25,6 +26,9 @@ import type { IncomingMessage } from '../../src/bitrix24/types.js';
 const TEST_WEBHOOK_URL = 'https://test-portal.bitrix24.ru/rest/1/abc123secret/';
 const TEST_ACCOUNT_ID = 'test-account';
 const TEST_WEBHOOK_BASE_URL = 'https://agent.example.com';
+const TEST_BOT_CLIENT_ID = createHash('md5')
+  .update(TEST_WEBHOOK_URL.replace(/\/$/, ''))
+  .digest('hex');
 
 function createMockRuntime(): PluginRuntime {
   return {
@@ -136,6 +140,7 @@ describe('Bitrix24Channel integration', () => {
 
       const payload = registerCall![1];
       expect(payload.CODE).toBe(`openclaw_${TEST_ACCOUNT_ID}`);
+      expect(payload.CLIENT_ID).toBe(TEST_BOT_CLIENT_ID);
       expect(payload.TYPE).toBe('B');
       expect(payload.PROPERTIES.NAME).toBe('Test Bot');
       expect(payload.PROPERTIES.COLOR).toBe('PURPLE');
@@ -210,6 +215,7 @@ describe('Bitrix24Channel integration', () => {
         (call) => call[0] === '/imbot.chat.sendTyping',
       );
       expect(typingCall).toBeDefined();
+      expect(typingCall![1].CLIENT_ID).toBe(TEST_BOT_CLIENT_ID);
       expect(typingCall![1].BOT_ID).toBe(BOT_ID);
       expect(typingCall![1].DIALOG_ID).toBe(DIALOG_ID);
 
@@ -218,6 +224,7 @@ describe('Bitrix24Channel integration', () => {
         (call) => call[0] === '/imbot.message.add',
       );
       expect(messageCall).toBeDefined();
+      expect(messageCall![1].CLIENT_ID).toBe(TEST_BOT_CLIENT_ID);
       expect(messageCall![1].BOT_ID).toBe(BOT_ID);
       expect(messageCall![1].DIALOG_ID).toBe(DIALOG_ID);
       expect(messageCall![1].MESSAGE).toBe('Hello [b]world[/b]');
@@ -262,6 +269,7 @@ describe('Bitrix24Channel integration', () => {
 
       // All chunks should have correct botId and dialogId
       for (const call of messageCalls) {
+        expect(call[1].CLIENT_ID).toBe(TEST_BOT_CLIENT_ID);
         expect(call[1].BOT_ID).toBe(BOT_ID);
         expect(call[1].DIALOG_ID).toBe(DIALOG_ID);
         expect(call[1].MESSAGE).toBeTruthy();
@@ -313,7 +321,7 @@ describe('Bitrix24Channel integration', () => {
 
       await expect(
         freshChannel.sendTextMessage('no-bot', DIALOG_ID, 'test'),
-      ).rejects.toThrow('not configured or bot not registered');
+      ).rejects.toThrow('not configured, bot not registered, or bot CLIENT_ID missing');
 
       freshChannel.destroy();
     });
@@ -493,6 +501,7 @@ describe('Bitrix24Channel integration', () => {
         (call) => call[0] === '/imbot.unregister',
       );
       expect(unregisterCall).toBeDefined();
+      expect(unregisterCall![1].CLIENT_ID).toBe(TEST_BOT_CLIENT_ID);
       expect(unregisterCall![1].BOT_ID).toBe(BOT_ID);
 
       expect(runtime.logger.info).toHaveBeenCalledWith(

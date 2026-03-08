@@ -1,7 +1,7 @@
 ---
 name: bitrix24
 description: Bitrix24 (Битрикс24) — CRM, tasks, calendar, drive, chat via REST API. Управление порталом Битрикс24: сделки, контакты, лиды, задачи, календарь, диск, мессенджер. Install Bitrix24 skill to connect your portal.
-version: 0.5.1
+version: 0.5.2
 metadata:
   openclaw:
     requires:
@@ -11,8 +11,10 @@ metadata:
         - curl
       mcp:
         - url: https://mcp-dev.bitrix24.tech/mcp
+          transport: streamable_http
           tools:
             - bitrix-search
+            - bitrix-app-development-doc-details
             - bitrix-method-details
             - bitrix-article-details
             - bitrix-event-details
@@ -63,6 +65,7 @@ Use MCP tools to find new methods or check for updates:
 2. **`bitrix-method-details`** — get full method spec: parameters, returns, errors, examples. Pass exact method name (e.g., `crm.deal.add`)
 3. **`bitrix-article-details`** — get overview articles by title
 4. **`bitrix-event-details`** — get webhook event documentation
+5. **`bitrix-app-development-doc-details`** — get app-development docs such as OAuth, install callback, and BX24 SDK topics
 
 The module files below cover the most common methods. Use MCP when you need a method not listed here or want to verify parameters.
 
@@ -122,3 +125,11 @@ On error, response contains `error` and `error_description` fields. Common error
 - `QUERY_LIMIT_EXCEEDED` — rate limit hit, wait and retry
 - `ACCESS_DENIED` — insufficient permissions for this method
 - `NOT_FOUND` — entity with given ID doesn't exist
+
+### `imbot.*` Security Rule
+
+When working with `imbot.*` methods, always persist and reuse the same secret `CLIENT_ID`.
+
+- `imbot.register` must include `CLIENT_ID`
+- every later `imbot.*` call must pass the same `CLIENT_ID`
+- do not treat `CLIENT_ID` as a public bot identifier

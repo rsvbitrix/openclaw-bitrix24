@@ -38,6 +38,8 @@ export interface BotConfig {
   workPosition?: string;
   avatar?: string; // base64
   email?: string;
+  /** Secret CLIENT_ID reused across all imbot.* calls for this bot. */
+  clientId?: string;
 }
 
 export type BotColor =
@@ -87,6 +89,7 @@ export type ChatType = 'P' | 'C' | 'O' | 'S';
 
 export interface OutgoingMessage {
   botId: number;
+  botClientId: string;
   dialogId: string;
   text: string;
   media?: MediaAttachment[];

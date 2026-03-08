@@ -39,16 +39,26 @@ channels:
         bot:
           name: "Sales Bot"
           color: AZURE
+          # bot.clientId is auto-derived from the webhook
 
       - id: support
         domain: portal-b.bitrix24.ru
         accessToken: "your-oauth-access-token"
         refreshToken: "your-oauth-refresh-token"
-        clientId: "app.xxxxxxxx.xxxxxxxx"
-        clientSecret: "your-client-secret"
+        clientId: "app.xxxxxxxx.xxxxxxxx"       # OAuth app clientId
+        clientSecret: "your-client-secret"      # OAuth app clientSecret
+        bot:
+          name: "Support Bot"
+          clientId: "stable-secret-bot-client-id"
 ```
 
 OAuth tokens are refreshed automatically when `clientId` and `clientSecret` are provided.
+
+For `imbot.*` calls, the plugin also needs a bot `CLIENT_ID`:
+
+- webhook accounts derive it automatically from the webhook secret
+- OAuth accounts should set `bot.clientId` explicitly
+- the same value is reused across all `imbot.*` methods
 
 ## Required Scopes
 

@@ -73,14 +73,18 @@ channels:
           name: "Sales Bot"
           color: AZURE
           workPosition: "Sales Assistant"
+          # bot.clientId is auto-derived from the webhook secret
 
       - id: support
         domain: portal-b.bitrix24.ru
         accessToken: "your-oauth-access-token"
         refreshToken: "your-oauth-refresh-token"
+        clientId: "app.xxxxxxxx.xxxxxxxx"      # OAuth app clientId
+        clientSecret: "your-client-secret"     # OAuth app clientSecret
         bot:
           name: "Support Bot"
           color: GREEN
+          clientId: "stable-secret-bot-client-id"
         dmPolicy: paired          # "open" (default) or "paired"
         textChunkLimit: 3000      # max chars per message chunk (default: 4000)
 ```
@@ -95,6 +99,8 @@ channels:
 | `accounts[].webhookUrl` | string | -- | Per-account webhook URL |
 | `accounts[].accessToken` | string | -- | OAuth access token |
 | `accounts[].refreshToken` | string | -- | OAuth refresh token |
+| `accounts[].clientId` | string | -- | OAuth app clientId used for token refresh |
+| `accounts[].clientSecret` | string | -- | OAuth app clientSecret used for token refresh |
 | `accounts[].enabled` | boolean | `true` | Enable/disable account |
 | `accounts[].textChunkLimit` | number | `4000` | Max characters per message |
 | `accounts[].dmPolicy` | string | `"open"` | `"open"` or `"paired"` |
@@ -103,6 +109,7 @@ channels:
 | `accounts[].bot.color` | string | `"PURPLE"` | Bot color in chat list |
 | `accounts[].bot.workPosition` | string | `"AI Assistant"` | Shown under bot name |
 | `accounts[].bot.avatar` | string | -- | Base64-encoded avatar image |
+| `accounts[].bot.clientId` | string | auto for webhooks | Secret `CLIENT_ID` reused in every `imbot.*` call |
 | `accounts[].botId` | number | auto | Pre-registered bot ID (skip registration) |
 | `accounts[].botCode` | string | auto | Pre-registered bot code |
 
@@ -112,6 +119,16 @@ channels:
 3. `BITRIX24_WEBHOOK_URL` environment variable
 
 Non-default accounts only use per-account credentials.
+
+## Bot `CLIENT_ID`
+
+Bitrix24 `imbot.*` methods require a stable secret `CLIENT_ID` tied to the bot creator.
+
+- webhook accounts derive it automatically from `md5(normalized webhookUrl)`
+- OAuth accounts should set `accounts[].bot.clientId` explicitly
+- the same `CLIENT_ID` is reused for `imbot.register`, `imbot.message.add`, `imbot.chat.sendTyping`, `imbot.message.update`, `imbot.message.delete`, and `imbot.unregister`
+
+Do not expose this value publicly. It is part of the bot control boundary.
 
 ## Skill
 

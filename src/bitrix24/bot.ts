@@ -10,10 +10,15 @@ export async function registerBot(
   webhookBaseUrl: string,
   config: BotConfig,
 ): Promise<BotRegistrationResult> {
+  if (!config.clientId) {
+    throw new Error('Bot CLIENT_ID is required for imbot.register');
+  }
+
   const code = `openclaw_${accountId}`;
   const base = webhookBaseUrl.replace(/\/$/, '');
 
   const result = await client.callMethod('imbot.register', {
+    CLIENT_ID: config.clientId,
     CODE: code,
     TYPE: 'B',
     EVENT_MESSAGE_ADD: `${base}/webhook/bitrix24/${accountId}/message`,
@@ -41,6 +46,7 @@ export async function registerBot(
 export async function updateBot(
   client: Bitrix24Client,
   botId: number,
+  botClientId: string,
   config: Partial<BotConfig>,
 ): Promise<void> {
   const fields: Record<string, any> = {};
@@ -53,6 +59,7 @@ export async function updateBot(
   if (Object.keys(fields).length === 0) return;
 
   await client.callMethod('imbot.update', {
+    CLIENT_ID: botClientId,
     BOT_ID: botId,
     FIELDS: fields,
   });
@@ -64,6 +71,10 @@ export async function updateBot(
 export async function unregisterBot(
   client: Bitrix24Client,
   botId: number,
+  botClientId: string,
 ): Promise<void> {
-  await client.callMethod('imbot.unregister', { BOT_ID: botId });
+  await client.callMethod('imbot.unregister', {
+    CLIENT_ID: botClientId,
+    BOT_ID: botId,
+  });
 }
